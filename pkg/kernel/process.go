@@ -90,6 +90,11 @@ func (pm *ProcessManager) Spawn(model string, role string, permissions []string)
 
 	pm.agents[pid] = pcb
 
+	// Register with the IPC message bus so agents can send/receive messages
+	if GlobalMessageBus != nil {
+		GlobalMessageBus.Register(pid)
+	}
+
 	return pcb
 }
 
@@ -117,6 +122,11 @@ func (pm *ProcessManager) Kill(pid int) error {
 	agent.cancel()
 	agent.KillChan <- true
 	close(agent.LogChan)
+
+	// Unregister from IPC message bus
+	if GlobalMessageBus != nil {
+		GlobalMessageBus.Unregister(pid)
+	}
 
 	return nil
 }

@@ -1,3 +1,0 @@
-$env:GEMINI_API_KEY="your-api-key"
-.\aos spawn --model "gemini-1.5-flash"
-.\aos logs 1

@@ -73,7 +73,11 @@ func main() {
 		memDriver = chroma
 	}
 
-	fsDriver, err := io.NewLocalFSDriver("d:/AgentOS/workspace")
+	fsBasePath := os.Getenv("WORKSPACE_PATH")
+	if fsBasePath == "" {
+		fsBasePath = "/root/workspace"
+	}
+	fsDriver, err := io.NewLocalFSDriver(fsBasePath)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to initialize FSDriver: %v", err))
 	}
@@ -132,7 +136,7 @@ func main() {
 			fmt.Println("\nShutting down AgentOS...")
 		},
 	}
-	spawnCmd.Flags().StringVar(&model, "model", "gemini-3.5-flash", "LLM Engine model ID")
+	spawnCmd.Flags().StringVar(&model, "model", "gemini-1.5-flash", "LLM Engine model ID")
 	spawnCmd.Flags().StringVar(&role, "role", "You are an AI developer in AgentOS.", "Primary operational profile prompt")
 
 	var psCmd = &cobra.Command{

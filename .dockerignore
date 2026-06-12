@@ -1,0 +1,11 @@
+.env
+.git
+.gitignore
+.vscode
+.idea
+*.swp
+*.swo
+aos
+aos.exe
+*.md
+workspace/

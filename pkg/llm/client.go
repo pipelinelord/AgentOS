@@ -26,9 +26,9 @@ func NewClient(ctx context.Context, modelName string, systemInstruction string) 
 		return nil, fmt.Errorf("failed to create Gemini client: %w", err)
 	}
 
-	// Use user-specified model, e.g., "gemini-1.5-pro"
+	// Use user-specified model, e.g., "gemini-1.5-flash"
 	if modelName == "" {
-		modelName = "gemini-3.5-flash"
+		modelName = "gemini-1.5-flash"
 	}
 	model := client.GenerativeModel(modelName)
 	if systemInstruction != "" {

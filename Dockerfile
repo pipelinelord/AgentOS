@@ -17,19 +17,37 @@ RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o aos cmd/aos/main.go
 # ==========================================
 FROM alpine:3.20
 
-RUN apk add --no-cache openssh-server bash ca-certificates tmux util-linux
+# Runtime dependencies
+RUN apk add --no-cache \
+    openssh-server \
+    bash \
+    ca-certificates \
+    tmux \
+    util-linux
 
-# Configure internal OpenSSH isolation limits
+# Generate SSH host keys
 RUN ssh-keygen -A
-RUN echo 'root:AgentOS_Secure_Token_2026!' | chpasswd
-RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-RUN sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
+# Configure SSH — no hardcoded password here
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
+# Copy compiled binary
+COPY --from=builder /app/aos /usr/local/bin/aos
+RUN chmod +x /usr/local/bin/aos
+
+# Create workspace directory for agent file sandboxing
+RUN mkdir -p /root/workspace
 
 WORKDIR /root/
-COPY --from=builder /app/aos /usr/local/bin/aos
 
-# Force active user session bindings to lock directly into the AgentOS console UI
-RUN echo "if [ -x /usr/local/bin/aos ]; then exec /usr/local/bin/aos; fi" >> /root/.bashrc
+# Auto-launch AgentOS when user SSHs in
+RUN echo 'if [ -x /usr/local/bin/aos ]; then exec /usr/local/bin/aos; fi' >> /root/.bashrc
 
-EXPOSE 22
-CMD ["/usr/sbin/sshd", "-D", "-e"]
+# Entrypoint script — sets SSH password from env at runtime, then starts sshd
+COPY entry.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+EXPOSE 22 8088
+
+CMD ["/usr/local/bin/docker-entrypoint.sh"]

@@ -1,0 +1,39 @@
+services:
+
+  # ==========================================
+  # AgentOS Core
+  # ==========================================
+  agentos:
+    image: yourdockerhub/agentos:latest   # replace with your image name
+    # build: .                            # uncomment to build locally instead
+    container_name: agentos
+    env_file:
+      - .env
+    ports:
+      - "2222:22"       # SSH access (using 2222 to avoid conflict with host SSH)
+      - "8088:8088"     # Webhook / HTTP API
+    volumes:
+      - ./workspace:/root/workspace       # agent file sandbox — persists on host
+    depends_on:
+      chromadb:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ==========================================
+  # ChromaDB — Vector Memory for Agents
+  # ==========================================
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: agentos-chromadb
+    volumes:
+      - chroma_data:/chroma/chroma
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  chroma_data:
+    driver: local
